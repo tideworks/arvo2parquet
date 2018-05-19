@@ -132,7 +132,7 @@ public class DataLoad {
     return new Schema.Parser().parse(get_schema_rsrc.apply(schemaRsrcPath));
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
     try {
       final int maxRecords = args.length > 0 ? Integer.parseUnsignedInt(args[0]) : 10;
       final Schema schema = getSchema(SCHEMA_FILE_NAME);
@@ -184,7 +184,6 @@ public class DataLoad {
   }
 
   private static void readFromParquet(@Nonnull Path filePathToRead) throws IOException {
-    //noinspection ConstantConditions
     try (final ParquetReader<GenericData.Record> reader = AvroParquetReader
             .<GenericData.Record>builder(nioPathToInputFile(filePathToRead))
             .withConf(new Configuration())

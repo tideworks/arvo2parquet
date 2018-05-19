@@ -17,7 +17,6 @@
   <!-- Project Properties -->
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jcommander.version>1.72</jcommander.version>
     <slf4j.version>1.7.7</slf4j.version>
     <logback.version>1.1.2</logback.version>
     <jackson.mapper.asl.version>1.9.13</jackson.mapper.asl.version>
