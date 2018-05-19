@@ -1,0 +1,14 @@
+{
+  "type" : "record",
+  "name" : "test_table",
+  "namespace" : "ERM_INTERNAL_EKP",
+  "fields" : [ {
+    "name" : "c1",
+    "type" : [ "null", "int" ],
+    "default" : null
+  }, {
+    "name" : "c2",
+    "type" : [ "null", "string" ],
+    "default" : null
+  } ]
+}
