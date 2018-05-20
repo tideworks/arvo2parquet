@@ -38,8 +38,8 @@ These methods provide implementations of these two `OutputFile` and `InputFile` 
 that make it possible to write Avro data to Parquet formatted file residing in the
 conventional file system (i.e., a plain file system instead of the Hadoop hdfs file system)
 and then read it back. The usecase would be for working in a big data solution stack that
-is not predicated on Hadoop and hdfs.
-
+is not predicated on Hadoop and hdfs.  
+<br>
 - It is an easy matter to adapt this approach to work with JSON input data - just
 synthesize an appropriate Avro schema to describe the JSON data, put the JSON data
 into an Avro `GenericData.Record` and write it out.
