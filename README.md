@@ -2,11 +2,11 @@
 
 Based on example code snippet `ParquetReaderWriterWithAvro.java` located on github at:
  
-[**MaxNevermind/Hadoop-snippets**](https://github.com/MaxNevermind/Hadoop-snippets/blob/master/src/main/java/org/maxkons/hadoop_snippets/parquet/ParquetReaderWriterWithAvro.java)
+&nbsp;&nbsp;&nbsp;&nbsp;[**MaxNevermind/Hadoop-snippets**](https://github.com/MaxNevermind/Hadoop-snippets/blob/master/src/main/java/org/maxkons/hadoop_snippets/parquet/ParquetReaderWriterWithAvro.java)
  
-Original example code author: Max Konstantinov [MaxNevermind](https://github.com/MaxNevermind)
+Original example code author: **Max Konstantinov** [MaxNevermind](https://github.com/MaxNevermind)
 
-Extensively refactored by: Roger D. Voss [roger-dv](https://github.com/roger-dv), Tideworks Technology, May 2018
+Extensively refactored by: **Roger Voss** [roger-dv](https://github.com/roger-dv), Tideworks Technology, May 2018
 
 ## IMPLEMENTATION NOTES:
 
@@ -23,23 +23,22 @@ characters.
 dummy test data.
 
 - The most significant enhancements is where the code now calls these two methods:
+    * `nioPathToOutputFile()`
+    * `nioPathToInputFile()`
 
-`nioPathToOutputFile()` and `nioPathToInputFile()`
-
-`nioPathToOutputFile()` accepts a Java nio `Path` to a standard file system file path
+  + `nioPathToOutputFile()` accepts a Java nio `Path` to a standard file system file path
 and returns an `org.apache.parquet.io.OutputFile` (which is accepted by the
 `AvroParquetWriter` builder).
 
-`nioPathToInputFile()` accepts a Java nio Path to a standard file system file path
+  + `nioPathToInputFile()` accepts a Java nio Path to a standard file system file path
 and returns an `org.apache.parquet.io.InputFile` (which is accepted by the
-`AvroParquetReader` builder).
-
+`AvroParquetReader` builder).  
+<br>
 These methods provide implementations of these two `OutputFile` and `InputFile` adaptors
 that make it possible to write Avro data to Parquet formatted file residing in the
 conventional file system (i.e., a plain file system instead of the Hadoop hdfs file system)
-and then read it back.
-
-Usecase: Dremio can be incrementally loaded with data provided in Parquet format files.
+and then read it back. The usecase would be for working in a big data solution stack that
+is not predicated on Hadoop and hdfs.
 
 - It is an easy matter to adapt this approach to work with JSON input data - just
 synthesize an appropriate Avro schema to describe the JSON data, put the JSON data
