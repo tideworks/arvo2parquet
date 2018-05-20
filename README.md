@@ -40,6 +40,7 @@ conventional file system (i.e., a plain file system instead of the Hadoop hdfs f
 and then read it back. The usecase would be for working in a big data solution stack that
 is not predicated on Hadoop and hdfs.  
 <br>
+
 - It is an easy matter to adapt this approach to work with JSON input data - just
 synthesize an appropriate Avro schema to describe the JSON data, put the JSON data
 into an Avro `GenericData.Record` and write it out.
