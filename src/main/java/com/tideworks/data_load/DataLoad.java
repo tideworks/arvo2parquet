@@ -63,6 +63,7 @@
  */
 package com.tideworks.data_load;
 
+import com.tideworks.annotation.InvokeByteCodePatching;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.hadoop.conf.Configuration;
@@ -93,6 +94,7 @@ import static com.tideworks.data_load.io.OutputFile.nioPathToOutputFile;
 /*
     Example of reading writing Parquet in java without BigData tools.
 */
+@InvokeByteCodePatching
 public class DataLoad {
   private static final Logger LOGGER;
   private static final String SCHEMA_FILE_NAME = "avroToParquet.avsc";

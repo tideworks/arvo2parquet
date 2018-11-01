@@ -1,6 +1,6 @@
 {
   "type" : "record",
-  "name" : "test_table",
+  "name" : "test$table",
   "namespace" : "ERM_INTERNAL_EKP",
   "fields" : [ {
     "name" : "c1",
