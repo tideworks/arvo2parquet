@@ -1,4 +1,4 @@
-/** DataLoad.java
+/* DataLoad.java
  *
  * Based on example code snippet ParquetReaderWriterWithAvro.java located on github at:
  *
@@ -82,8 +82,6 @@ import java.io.InputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -150,23 +148,34 @@ public class DataLoad {
   private static void doTestParquet(final Schema schema, final int maxRecords, final Path parquetFilePath)
           throws IOException
   {
-    final List<GenericData.Record> sampleData = new ArrayList<>();
     final RandomString session = new RandomString(64);
+    final GenericData.Record record = new GenericData.Record(schema);
+    final int[] count = { 1 };
+    final int[] iterations = { maxRecords };
 
-    for(int i = 1; i <= maxRecords; i++) {
-      GenericData.Record record = new GenericData.Record(schema);
-      record.put("c1", i);
+    writeToParquet(schema, parquetFilePath, writer -> {
+      record.put("c1", count[0]++);
       record.put("c2", session.nextString());
-      sampleData.add(record);
-    }
+      writer.write(record);
+      return (--iterations[0]) > 0;
+    });
 
-    writeToParquet(schema, sampleData, parquetFilePath);
     readFromParquet(parquetFilePath);
   }
 
-  private static void writeToParquet(@Nonnull Schema schema,
-                                     @Nonnull List<GenericData.Record> recordsToWrite,
-                                     @Nonnull Path fileToWrite) throws IOException
+  @FunctionalInterface
+  private interface WriteGenericDataRecord {
+    void write(GenericData.Record record) throws IOException;
+  }
+
+  @FunctionalInterface
+  private interface GenericDataRecordSink {
+    boolean accept(WriteGenericDataRecord writer) throws IOException;
+  }
+
+  private static void writeToParquet(@Nonnull final Schema schema,
+                                     @Nonnull final Path fileToWrite,
+                                     @Nonnull final GenericDataRecordSink sink) throws IOException
   {
     try (final ParquetWriter<GenericData.Record> writer = AvroParquetWriter
             .<GenericData.Record>builder(nioPathToOutputFile(fileToWrite))
@@ -174,18 +183,17 @@ public class DataLoad {
             .withPageSize(128 * 1024)
             .withSchema(schema)
             .withConf(new Configuration())
-            .withCompressionCodec(CompressionCodecName.SNAPPY)
+            .withCompressionCodec(CompressionCodecName.GZIP)
             .withValidation(false)
             .withDictionaryEncoding(false)
             .build())
     {
-      for (GenericData.Record record : recordsToWrite) {
-        writer.write(record);
-      }
+      //noinspection StatementWithEmptyBody
+      do ; while(sink.accept(writer::write));
     }
   }
 
-  private static void readFromParquet(@Nonnull Path filePathToRead) throws IOException {
+  private static void readFromParquet(@Nonnull final Path filePathToRead) throws IOException {
     try (final ParquetReader<GenericData.Record> reader = AvroParquetReader
             .<GenericData.Record>builder(nioPathToInputFile(filePathToRead))
             .withConf(new Configuration())
