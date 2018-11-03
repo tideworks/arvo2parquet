@@ -69,9 +69,15 @@ import org.apache.avro.generic.GenericData;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.avro.AvroParquetWriter;
+import org.apache.parquet.bytes.BytesUtils;
+import org.apache.parquet.format.Util;
+import org.apache.parquet.format.converter.ParquetMetadataConverter;
+import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.io.PositionOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +88,7 @@ import java.io.InputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -190,7 +197,24 @@ public class DataLoad {
     {
       //noinspection StatementWithEmptyBody
       do ; while(sink.accept(writer::write));
+      writer.close();
+      final Path metaDataOutPath = Paths.get(ParquetFileWriter.PARQUET_METADATA_FILE);
+      try (final PositionOutputStream out = nioPathToOutputFile(metaDataOutPath).createOrOverwrite(0)) {
+        serializeFooter(writer.getFooter(), out);
+      }
     }
+  }
+
+  private static void serializeFooter(final ParquetMetadata footer, final PositionOutputStream out) throws IOException {
+    out.write(ParquetFileWriter.MAGIC);
+    final long footerIndex = out.getPos();
+    final ParquetMetadataConverter metadataConverter = new ParquetMetadataConverter();
+    final org.apache.parquet.format.FileMetaData parquetMetadata =
+            metadataConverter.toParquetMetadata(ParquetFileWriter.CURRENT_VERSION, footer);
+    Util.writeFileMetaData(parquetMetadata, out);
+    LOGGER.debug("{}: footer length = {}" , out.getPos(), (out.getPos() - footerIndex));
+    BytesUtils.writeIntLittleEndian(out, (int) (out.getPos() - footerIndex));
+    out.write(ParquetFileWriter.MAGIC);
   }
 
   private static void readFromParquet(@Nonnull final Path filePathToRead) throws IOException {
