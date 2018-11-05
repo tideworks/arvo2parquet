@@ -72,6 +72,7 @@ import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.bytes.BytesUtils;
 import org.apache.parquet.format.Util;
 import org.apache.parquet.format.converter.ParquetMetadataConverter;
+import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -168,6 +169,8 @@ public class DataLoad {
     });
 
     readFromParquet(parquetFilePath);
+
+    extractMetaDataFooter(parquetFilePath);
   }
 
   @FunctionalInterface
@@ -199,6 +202,7 @@ public class DataLoad {
       do ; while(sink.accept(writer::write));
       writer.close();
       final Path metaDataOutPath = Paths.get(ParquetFileWriter.PARQUET_METADATA_FILE);
+      Files.deleteIfExists(metaDataOutPath);
       try (final PositionOutputStream out = nioPathToOutputFile(metaDataOutPath).createOrOverwrite(0)) {
         serializeFooter(writer.getFooter(), out);
       }
@@ -226,6 +230,17 @@ public class DataLoad {
       GenericData.Record record;
       while ((record = reader.read()) != null) {
         System.out.println(record);
+      }
+    }
+  }
+
+  private static void extractMetaDataFooter(final Path parquetFilePath) throws IOException {
+    try (final ParquetFileReader rdr = ParquetFileReader.open(nioPathToInputFile(parquetFilePath))) {
+      final ParquetMetadata footer = rdr.getFooter();
+      final Path metaDataOutPath = Paths.get(ParquetFileWriter.PARQUET_METADATA_FILE + "_dup");
+      Files.deleteIfExists(metaDataOutPath);
+      try (final PositionOutputStream out = nioPathToOutputFile(metaDataOutPath).createOrOverwrite(0)) {
+        serializeFooter(footer, out);
       }
     }
   }
