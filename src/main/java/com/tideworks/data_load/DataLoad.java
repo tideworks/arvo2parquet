@@ -90,6 +90,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -171,6 +172,14 @@ public class DataLoad {
     readFromParquet(parquetFilePath);
 
     extractMetaDataFooter(parquetFilePath);
+
+    Path parentDirPath = parquetFilePath.getParent();
+    if (parentDirPath == null) {
+      parentDirPath = FileSystems.getDefault().getPath(".");
+    }
+    final Path emptyParquetFilePath = Paths.get(parentDirPath.toString(), "empty.parquet");
+    //noinspection EmptyTryBlock
+    try (final ParquetWriter<GenericData.Record> ignored = createParquetWriterInstance(schema, emptyParquetFilePath)) {}
   }
 
   @FunctionalInterface
@@ -183,11 +192,11 @@ public class DataLoad {
     boolean accept(WriteGenericDataRecord writer) throws IOException;
   }
 
-  private static void writeToParquet(@Nonnull final Schema schema,
-                                     @Nonnull final Path fileToWrite,
-                                     @Nonnull final GenericDataRecordSink sink) throws IOException
+  private static ParquetWriter<GenericData.Record> createParquetWriterInstance(@Nonnull final Schema schema,
+                                                                               @Nonnull final Path fileToWrite)
+          throws IOException
   {
-    try (final ParquetWriter<GenericData.Record> writer = AvroParquetWriter
+    return AvroParquetWriter
             .<GenericData.Record>builder(nioPathToOutputFile(fileToWrite))
             .withRowGroupSize(256 * 1024 * 1024)
             .withPageSize(128 * 1024)
@@ -196,8 +205,14 @@ public class DataLoad {
             .withCompressionCodec(CompressionCodecName.GZIP)
             .withValidation(false)
             .withDictionaryEncoding(false)
-            .build())
-    {
+            .build();
+  }
+
+  private static void writeToParquet(@Nonnull final Schema schema,
+                                     @Nonnull final Path fileToWrite,
+                                     @Nonnull final GenericDataRecordSink sink) throws IOException
+  {
+    try (final ParquetWriter<GenericData.Record> writer = createParquetWriterInstance(schema, fileToWrite)) {
       //noinspection StatementWithEmptyBody
       do ; while(sink.accept(writer::write));
       writer.close();
@@ -209,9 +224,11 @@ public class DataLoad {
     }
   }
 
-  private static void serializeFooter(final ParquetMetadata footer, final PositionOutputStream out) throws IOException {
+  private static void serializeFooter(ParquetMetadata footer, final PositionOutputStream out) throws IOException {
     out.write(ParquetFileWriter.MAGIC);
     final long footerIndex = out.getPos();
+    //noinspection unchecked
+    footer = new ParquetMetadata(footer.getFileMetaData(), Collections.EMPTY_LIST);
     final ParquetMetadataConverter metadataConverter = new ParquetMetadataConverter();
     final org.apache.parquet.format.FileMetaData parquetMetadata =
             metadataConverter.toParquetMetadata(ParquetFileWriter.CURRENT_VERSION, footer);
@@ -237,7 +254,7 @@ public class DataLoad {
   private static void extractMetaDataFooter(final Path parquetFilePath) throws IOException {
     try (final ParquetFileReader rdr = ParquetFileReader.open(nioPathToInputFile(parquetFilePath))) {
       final ParquetMetadata footer = rdr.getFooter();
-      final Path metaDataOutPath = Paths.get(ParquetFileWriter.PARQUET_METADATA_FILE + "_dup");
+      final Path metaDataOutPath = Paths.get(ParquetFileWriter.PARQUET_METADATA_FILE + "_dup.parquet");
       Files.deleteIfExists(metaDataOutPath);
       try (final PositionOutputStream out = nioPathToOutputFile(metaDataOutPath).createOrOverwrite(0)) {
         serializeFooter(footer, out);
