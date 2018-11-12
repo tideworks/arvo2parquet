@@ -6,10 +6,15 @@ else
    sep=':'
 fi
 
-export HOME=${PWD}
 dir=./target
-clspath=`find ${dir}/ -type f -name "*.jar"`
-clspath=`echo ${clspath}|tr ' ' $sep`
-cls=com/tideworks/data_load/DataLoad
+cd $dir
 
-java -ea -cp "${clspath}" ${cls} $*
+export HOME=${PWD}
+export HADOOP_HOME=${PWD}
+
+CLASSPATH=$(find . -type f -name "*.jar")
+CLASSPATH=$(echo ${CLASSPATH}|tr ' ' $sep)
+
+RUN_CLASS=com.tideworks.data_load.DataLoad
+
+java -ea -cp ".${sep}${CLASSPATH}" ${RUN_CLASS} $*
