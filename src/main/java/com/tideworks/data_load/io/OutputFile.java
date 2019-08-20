@@ -13,11 +13,10 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.*;
 
 public final class OutputFile {
   private static final int IO_BUF_SIZE = 16 * 1024;
@@ -28,12 +27,12 @@ public final class OutputFile {
     return new org.apache.parquet.io.OutputFile() {
       @Override
       public PositionOutputStream create(long blockSizeHint) throws IOException {
-        return makePositionOutputStream(file, IO_BUF_SIZE, false);
+        return makePositionOutputStream(file, IO_BUF_SIZE, CREATE_NEW);
       }
 
       @Override
       public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
-        return makePositionOutputStream(file, IO_BUF_SIZE, true);
+        return makePositionOutputStream(file, IO_BUF_SIZE, CREATE, TRUNCATE_EXISTING );
       }
 
       @Override
@@ -48,11 +47,11 @@ public final class OutputFile {
     };
   }
 
-  private static PositionOutputStream makePositionOutputStream(@Nonnull Path file, int ioBufSize, boolean trunc)
+  private static PositionOutputStream makePositionOutputStream(@Nonnull Path file, int ioBufSize, OpenOption... options)
           throws IOException
   {
     final OutputStream output = new BufferedOutputStream(
-            Files.newOutputStream(file, CREATE, trunc ? TRUNCATE_EXISTING : APPEND), ioBufSize);
+            Files.newOutputStream(file, options), ioBufSize);
 
     return new PositionOutputStream() {
       private long position = 0;
